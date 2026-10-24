@@ -158,7 +158,7 @@
             gap: 15px;
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(88, 101, 242, 0.4);
-            padding: 16px;
+            padding: 18px 20px;
             border-radius: 14px;
             position: relative;
             overflow: hidden;
@@ -171,41 +171,6 @@
             box-shadow: 0 6px 20px rgba(88, 101, 242, 0.3);
         }
 
-        .pfp-wrapper {
-            position: relative;
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-        }
-
-        .discord-pfp {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .server-icon {
-            border-radius: 18px; /* Standard rounded icon style for Discord servers */
-        }
-
-        .status-dot {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background-color: #747f8d;
-            border: 2px solid #1e1f22;
-        }
-
-        .status-online { background-color: #23a55a; }
-        .status-idle { background-color: #f0b232; }
-        .status-dnd { background-color: #f23f43; }
-        .status-offline { background-color: #80848e; }
-
         .discord-info {
             display: flex;
             flex-direction: column;
@@ -215,7 +180,7 @@
 
         .discord-displayname {
             font-weight: 700;
-            font-size: 18px;
+            font-size: 20px;
             color: #ffffff;
             white-space: nowrap;
             overflow: hidden;
@@ -223,16 +188,16 @@
         }
 
         .discord-username {
-            font-size: 13px;
+            font-size: 14px;
             color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .discord-role {
             font-size: 12px;
             background: rgba(88, 101, 242, 0.3);
             color: #b9bbbe;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 6px;
             display: inline-block;
             align-self: flex-start;
@@ -358,26 +323,24 @@
 
     <script>
         // DISCORD USER CREDITS CONFIGURATION:
-        // You can provide User ID along with optional fallback details (username, displayName, avatar)
-        // so they ALWAYS load reliably even if Lanyard API is restricted or offline for that user!
+        // Provide user ID and role. Optional overrides (displayName, username, avatar) can be set.
         const creditsData = [
             { 
-                id: "156832021058813952", 
+                id: "1373226032936783942", 
                 role: "Project Owner",
-                displayName: "Wumpus", // Optional override
-                username: "@wumpus",   // Optional override
-                avatar: "https://cdn.discordapp.com/embed/avatars/0.png" // Optional image URL or custom avatar
+                displayName: "Chris",
+                username: "@chrisy101112"
             },
             { 
                 id: "1422589540966858962", 
                 role: "Developer",
                 displayName: "RZ",
-                username: "@rz_riccardo",
-                avatar: "https://cdn.discordapp.com/avatars/142258954096685…62/1d519dbb3d205349e6072857435d6d98.webp?size=128"
+                username: "@rz_riccardo"
             }
         ];
 
         // DISCORD PARTNERS CONFIGURATION:
+        // Specify inviteCode, guildId (Server ID), or both for reliable fetching!
         const partnersData = [
             { inviteCode: "discord-api", inviteLink: "https://discord.gg/discord-api", role: "Official API Hub" },
             { inviteCode: "discord-developers", inviteLink: "https://discord.gg/discord-developers", role: "Dev Community" }
@@ -405,8 +368,18 @@
         setInterval(tick, 1000);
         tick();
 
-        // Helper function for safe fetching with timeout
-        async function fetchWithTimeout(resource, options = {}, timeout = 4000) {
+        // Helper to generate standard default Discord avatars based on User ID
+        function getDefaultAvatar(userId) {
+            try {
+                const index = BigInt(userId) >> 22n;
+                return `https://cdn.discordapp.com/embed/avatars/${Number(index % 5n)}.png`;
+            } catch (e) {
+                return `https://cdn.discordapp.com/embed/avatars/0.png`;
+            }
+        }
+
+        // Safe fetch with timeout
+        async function fetchWithTimeout(resource, options = {}, timeout = 3500) {
             const controller = new AbortController();
             const id = setTimeout(() => controller.abort(), timeout);
             try {
@@ -422,66 +395,74 @@
             }
         }
 
-        // Fetch Discord User Data safely with robust fallbacks
+        // Fetch Discord User Data using CORS proxy + API fallback
         async function fetchDiscordUser(credit) {
             const userId = credit.id;
-            const defaultUser = {
+            const fallbackPfp = credit.avatar || getDefaultAvatar(userId);
+            
+            let result = {
                 id: userId,
-                displayName: credit.displayName || "Discord User",
+                displayName: credit.displayName || `User (${userId.slice(-4)})`,
                 username: credit.username || `@user_${userId.slice(-4)}`,
-                pfp: credit.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(userId.slice(-1) || '0') % 5}.png`,
+                pfp: fallbackPfp,
                 status: "offline"
             };
 
-            // Attempt 1: Direct Public Discord Lookup API (Gets actual avatar & display name by ID without bots)
+            // Strategy 1: Try Lanyard API (Best for active users / presence)
             try {
-                const lookupRes = await fetchWithTimeout(`https://discord-lookup.lookupbotdc.workers.dev/search/${userId}`);
-                if (lookupRes.ok) {
-                    const lookupData = await lookupRes.json();
-                    if (lookupData && lookupData.user) {
-                        const user = lookupData.user;
-                        return {
-                            id: user.id,
-                            displayName: credit.displayName || user.global_name || user.username,
-                            username: credit.username || `@${user.username}`,
-                            pfp: credit.avatar || lookupData.avatar_url || defaultUser.pfp,
-                            status: 'offline'
-                        };
-                    }
-                }
-            } catch (e) {
-                // Ignore silent lookup error and fallback to Lanyard / Default
-            }
-
-            // Attempt 2: Lanyard API (Adds live status if the user is in Lanyard)
-            try {
-                const response = await fetchWithTimeout(`https://api.lanyard.rest/v1/users/${userId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.success && data.data) {
-                        const user = data.data.discord_user;
+                const res = await fetchWithTimeout(`https://api.lanyard.rest/v1/users/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.success && json.data) {
+                        const user = json.data.discord_user;
                         const avatarUrl = user.avatar 
-                            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-                            : defaultUser.pfp;
+                            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith('a_') ? 'gif' : 'png'}?size=128`
+                            : fallbackPfp;
                         
                         return {
                             id: user.id,
                             displayName: credit.displayName || user.global_name || user.username,
                             username: credit.username || `@${user.username}`,
-                            pfp: credit.avatar || avatarUrl,
-                            status: data.data.discord_status || 'offline'
+                            pfp: avatarUrl,
+                            status: json.data.discord_status || 'offline'
                         };
                     }
                 }
             } catch (e) {
-                // Ignore silent fetch error
+                // Ignore failure, proceed to proxy lookup
             }
 
-            // Return configured default user with default colored avatar
-            return defaultUser;
+            // Strategy 2: Fetch profile details via CORS proxy from Discord lookup endpoint
+            try {
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://discordlookup.mesal3.workers.dev/v1/user/${userId}`)}`;
+                const res = await fetchWithTimeout(proxyUrl);
+                if (res.ok) {
+                    const proxyData = await res.json();
+                    if (proxyData && proxyData.contents) {
+                        const data = JSON.parse(proxyData.contents);
+                        if (data && (data.global_name || data.username)) {
+                            const avatarUrl = data.avatar 
+                                ? `https://cdn.discordapp.com/avatars/${userId}/${data.avatar}.png?size=128`
+                                : fallbackPfp;
+
+                            return {
+                                id: userId,
+                                displayName: credit.displayName || data.global_name || data.username,
+                                username: credit.username || `@${data.username}`,
+                                pfp: avatarUrl,
+                                status: 'offline'
+                            };
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore and return standard default object
+            }
+
+            return result;
         }
 
-        // Fetch Discord Server/Guild Invite Data safely
+        // Fetch Discord Server Data with proxy fallback
         async function fetchDiscordServer(partner) {
             const defaultServer = {
                 name: partner.role || "Discord Server",
@@ -489,33 +470,42 @@
                 onlineMembers: 0,
                 totalMembers: 0,
                 inviteLink: partner.inviteLink || "#",
-                role: partner.role || "Partner"
+                role: partner.role || "Partner Community"
             };
 
-            try {
-                const code = partner.inviteCode || (partner.inviteLink ? partner.inviteLink.split('/').pop() : "");
-                if (!code) return defaultServer;
+            const code = partner.inviteCode || (partner.inviteLink ? partner.inviteLink.split('/').pop() : "");
 
-                const response = await fetchWithTimeout(`https://discord.com/api/v9/invites/${code}?with_counts=true`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const guild = data.guild;
-                    const iconUrl = guild && guild.icon
-                        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
-                        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+            // Strategy 1: Public invite lookup with CORS proxy
+            if (code) {
+                try {
+                    const targetUrl = `https://discord.com/api/v9/invites/${code}?with_counts=true`;
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+                    
+                    const res = await fetchWithTimeout(proxyUrl);
+                    if (res.ok) {
+                        const proxyData = await res.json();
+                        if (proxyData && proxyData.contents) {
+                            const data = JSON.parse(proxyData.contents);
+                            if (data && data.guild) {
+                                const guild = data.guild;
+                                const iconUrl = guild.icon
+                                    ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
+                                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
-                    return {
-                        name: guild ? guild.name : "Discord Server",
-                        icon: iconUrl,
-                        onlineMembers: data.approximate_presence_count || 0,
-                        totalMembers: data.approximate_member_count || 0,
-                        inviteLink: partner.inviteLink || `https://discord.gg/${code}`,
-                        role: partner.role || "Partner Community"
-                    };
+                                return {
+                                    name: guild.name || "Discord Server",
+                                    icon: iconUrl,
+                                    onlineMembers: data.approximate_presence_count || 0,
+                                    totalMembers: data.approximate_member_count || 0,
+                                    inviteLink: partner.inviteLink || `https://discord.gg/${code}`,
+                                    role: partner.role || "Partner Community"
+                                };
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Fallthrough
                 }
-            } catch (e) {
-                // Ignore silent server invite fetch error
             }
 
             return defaultServer;
@@ -533,10 +523,6 @@
 
                 htmlBuffer += `
                     <div class="discord-card">
-                        <div class="pfp-wrapper">
-                            <img class="discord-pfp" src="${userData.pfp}" alt="${userData.displayName}'s PFP" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
-                            <div class="status-dot status-${userData.status}"></div>
-                        </div>
                         <div class="discord-info">
                             <span class="discord-displayname">${userData.displayName}</span>
                             <span class="discord-username">${userData.username}</span>
@@ -561,9 +547,6 @@
                 htmlBuffer += `
                     <div class="discord-card partner-card">
                         <div class="partner-header">
-                            <div class="pfp-wrapper">
-                                <img class="discord-pfp server-icon" src="${serverData.icon}" alt="${serverData.name}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
-                            </div>
                             <div class="discord-info">
                                 <span class="discord-displayname">${serverData.name}</span>
                                 <span class="discord-role">${serverData.role}</span>
