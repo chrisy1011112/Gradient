@@ -358,13 +358,26 @@
 
     <script>
         // DISCORD USER CREDITS CONFIGURATION:
+        // You can provide User ID along with optional fallback details (username, displayName, avatar)
+        // so they ALWAYS load reliably even if Lanyard API is restricted or offline for that user!
         const creditsData = [
-            { id: "1373226032936783942", role: "Project Owner" },
-            { id: "1422589540966858962", role: "Developer" }
+            { 
+                id: "156832021058813952", 
+                role: "Project Owner",
+                displayName: "Wumpus", // Optional override
+                username: "@wumpus",   // Optional override
+                avatar: "https://cdn.discordapp.com/embed/avatars/0.png" // Optional image URL or custom avatar
+            },
+            { 
+                id: "282859044591599616", 
+                role: "Developer",
+                displayName: "Clyde",
+                username: "@clyde",
+                avatar: "https://cdn.discordapp.com/embed/avatars/1.png"
+            }
         ];
 
         // DISCORD PARTNERS CONFIGURATION:
-        // Provide Invite Code (e.g. "discord-api" or "discord") or Server ID + Invite Link
         const partnersData = [
             { inviteCode: "discord-api", inviteLink: "https://discord.gg/discord-api", role: "Official API Hub" },
             { inviteCode: "discord-developers", inviteLink: "https://discord.gg/discord-developers", role: "Dev Community" }
@@ -410,16 +423,37 @@
         }
 
         // Fetch Discord User Data safely with robust fallbacks
-        async function fetchDiscordUser(userId) {
+        async function fetchDiscordUser(credit) {
+            const userId = credit.id;
             const defaultUser = {
                 id: userId,
-                displayName: "Discord User",
-                username: `@user_${userId.slice(-4)}`,
-                pfp: "https://cdn.discordapp.com/embed/avatars/0.png",
+                displayName: credit.displayName || "Discord User",
+                username: credit.username || `@user_${userId.slice(-4)}`,
+                pfp: credit.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(userId.slice(-1) || '0') % 5}.png`,
                 status: "offline"
             };
 
-            // Attempt 1: Lanyard API
+            // Attempt 1: Direct Public Discord Lookup API (Gets actual avatar & display name by ID without bots)
+            try {
+                const lookupRes = await fetchWithTimeout(`https://discord-lookup.lookupbotdc.workers.dev/search/${userId}`);
+                if (lookupRes.ok) {
+                    const lookupData = await lookupRes.json();
+                    if (lookupData && lookupData.user) {
+                        const user = lookupData.user;
+                        return {
+                            id: user.id,
+                            displayName: credit.displayName || user.global_name || user.username,
+                            username: credit.username || `@${user.username}`,
+                            pfp: credit.avatar || lookupData.avatar_url || defaultUser.pfp,
+                            status: 'offline'
+                        };
+                    }
+                }
+            } catch (e) {
+                // Ignore silent lookup error and fallback to Lanyard / Default
+            }
+
+            // Attempt 2: Lanyard API (Adds live status if the user is in Lanyard)
             try {
                 const response = await fetchWithTimeout(`https://api.lanyard.rest/v1/users/${userId}`);
                 if (response.ok) {
@@ -428,42 +462,22 @@
                         const user = data.data.discord_user;
                         const avatarUrl = user.avatar 
                             ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-                            : `https://cdn.discordapp.com/embed/avatars/0.png`;
+                            : defaultUser.pfp;
                         
                         return {
                             id: user.id,
-                            displayName: user.global_name || user.username,
-                            username: `@${user.username}`,
-                            pfp: avatarUrl,
+                            displayName: credit.displayName || user.global_name || user.username,
+                            username: credit.username || `@${user.username}`,
+                            pfp: credit.avatar || avatarUrl,
                             status: data.data.discord_status || 'offline'
                         };
                     }
                 }
             } catch (e) {
-                // Ignore silent fetch error and try fallback
+                // Ignore silent fetch error
             }
 
-            // Attempt 2: Public JAPI Lookup
-            try {
-                const fallbackRes = await fetchWithTimeout(`https://api.japi.rest/discord/v1/user/${userId}`);
-                if (fallbackRes.ok) {
-                    const fallbackData = await fallbackRes.json();
-                    if (fallbackData && fallbackData.data) {
-                        const user = fallbackData.data;
-                        return {
-                            id: user.id || userId,
-                            displayName: user.global_name || user.username || "Discord User",
-                            username: user.username ? `@${user.username}` : `@${userId}`,
-                            pfp: user.avatarURL || `https://cdn.discordapp.com/embed/avatars/0.png`,
-                            status: 'offline'
-                        };
-                    }
-                }
-            } catch (e) {
-                // Ignore fallback fetch failure
-            }
-
-            // Fallback default
+            // Return configured default user with default colored avatar
             return defaultUser;
         }
 
@@ -515,7 +529,7 @@
 
             let htmlBuffer = '';
             for (const credit of creditsData) {
-                const userData = await fetchDiscordUser(credit.id);
+                const userData = await fetchDiscordUser(credit);
 
                 htmlBuffer += `
                     <div class="discord-card">
