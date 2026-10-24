@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gradient Website - Home, About, Credits & Partners</title>
+    <title>Gradient Web App - Multi-Page Dashboard</title>
     
     <style>
         /* Base Styling */
@@ -32,17 +32,58 @@
             100% { background-position: 0% 50%; }
         }
 
+        /* Maintenance Screen Overlay */
+        .maintenance-screen {
+            display: none;
+            position: fixed;
+            top: 73px; /* Position below header so top navigation stays visible */
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 73px);
+            background: rgba(10, 10, 20, 0.96);
+            backdrop-filter: blur(20px);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .maintenance-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .maintenance-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
         /* Navigation Header */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 20px 40px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             flex-wrap: wrap;
             gap: 15px;
+            position: relative;
+            z-index: 1000; /* Stays above maintenance overlay */
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .logo {
@@ -50,6 +91,15 @@
             font-weight: 800;
             letter-spacing: 1px;
             text-transform: uppercase;
+        }
+
+        .version-badge {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-weight: 600;
         }
 
         nav {
@@ -151,17 +201,15 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
-        /* Discord Credit & Partner Card Styling */
+        /* Discord Cards */
         .discord-card {
             display: flex;
-            align-items: center;
-            gap: 15px;
+            flex-direction: column;
+            gap: 8px;
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(88, 101, 242, 0.4);
-            padding: 18px 20px;
+            padding: 18px;
             border-radius: 14px;
-            position: relative;
-            overflow: hidden;
             transition: all 0.3s ease;
         }
 
@@ -171,26 +219,15 @@
             box-shadow: 0 6px 20px rgba(88, 101, 242, 0.3);
         }
 
-        .discord-info {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            flex-grow: 1;
-        }
-
         .discord-displayname {
             font-weight: 700;
             font-size: 20px;
             color: #ffffff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .discord-username {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 8px;
         }
 
         .discord-role {
@@ -202,21 +239,12 @@
             display: inline-block;
             align-self: flex-start;
             border: 1px solid rgba(88, 101, 242, 0.5);
+            margin-top: 4px;
         }
 
-        /* Server Partner Cards Extensions */
+        /* Partner Extensions */
         .partner-card {
-            flex-direction: column;
-            align-items: flex-start;
             padding: 20px;
-        }
-
-        .partner-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            width: 100%;
-            margin-bottom: 12px;
         }
 
         .partner-meta {
@@ -225,38 +253,60 @@
             gap: 12px;
             font-size: 13px;
             color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 15px;
+            margin: 10px 0 15px 0;
         }
 
-        .online-count {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #23a55a;
-        }
-
-        .join-btn {
-            width: 100%;
+        .join-btn, .btn {
             background: #5865F2;
             color: white;
             text-decoration: none;
             text-align: center;
-            padding: 10px;
+            padding: 10px 18px;
             font-weight: 600;
             border-radius: 8px;
             transition: background 0.2s ease;
-            display: block;
+            display: inline-block;
             border: none;
+            cursor: pointer;
         }
 
-        .join-btn:hover {
+        .join-btn:hover, .btn:hover {
             background: #4752C4;
+        }
+
+        .btn-danger {
+            background: #f23f43;
+        }
+
+        .btn-danger:hover {
+            background: #d83a3e;
+        }
+
+        /* Admin Controls Form */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 15px;
+        }
+
+        .admin-lock-screen {
+            text-align: center;
+            padding: 40px 20px;
         }
     </style>
 </head>
@@ -264,14 +314,28 @@
 
     <!-- Navigation Header -->
     <header>
-        <div class="logo">GRADIENT</div>
+        <div class="logo-container">
+            <div class="logo">GRADIENT</div>
+            <span class="version-badge">v1.2.0</span>
+        </div>
         <nav>
-            <a href="#" onclick="showPage('home')" id="nav-home" class="active">Home</a>
-            <a href="#" onclick="showPage('about')" id="nav-about">About</a>
-            <a href="#" onclick="showPage('credits')" id="nav-credits">Credits</a>
-            <a href="#" onclick="showPage('partners')" id="nav-partners">Partners</a>
+            <a href="#home" onclick="showPage('home')" id="nav-home" class="active">Home</a>
+            <a href="#about" onclick="showPage('about')" id="nav-about">About</a>
+            <a href="#credits" onclick="showPage('credits')" id="nav-credits">Credits</a>
+            <a href="#partners" onclick="showPage('partners')" id="nav-partners">Partners</a>
+            <a href="#admin" onclick="showPage('admin')" id="nav-admin">🔒 Admin</a>
         </nav>
     </header>
+
+    <!-- Global Maintenance Overlay -->
+    <div id="maintenance-overlay" class="maintenance-screen">
+        <div class="maintenance-card">
+            <div class="maintenance-icon" onclick="secretAdminTrigger()" style="cursor: default; user-select: none;">🛠️</div>
+            <h1 id="maint-title-display">Under Maintenance</h1>
+            <p id="maint-msg-display">We are currently performing scheduled maintenance and updates. Please check back shortly!</p>
+            <p style="font-size: 14px; opacity: 0.7;" id="maint-eta-display">Estimated Uptime: Back online soon</p>
+        </div>
+    </div>
 
     <!-- Main Content Container -->
     <div class="container">
@@ -290,11 +354,11 @@
             <div class="grid-3">
                 <div class="card">
                     <h3>🚀 Our Mission</h3>
-                    <p style="font-size: 15px;">Delivering high-quality visual designs and reliable code tailored to your exact needs.</p>
+                    <p style="font-size: 15px; margin-top: 8px;">Delivering high-quality visual designs and reliable code tailored to your exact needs.</p>
                 </div>
                 <div class="card">
                     <h3>🎨 Creative Vision</h3>
-                    <p style="font-size: 15px;">Blending sleek animations, vibrant aesthetics, and practical layout structures.</p>
+                    <p style="font-size: 15px; margin-top: 8px;">Blending sleek animations, vibrant aesthetics, and practical layout structures.</p>
                 </div>
             </div>
         </div>
@@ -305,7 +369,7 @@
             <p>Special thanks to everyone who contributed to making this project possible.</p>
 
             <div id="credits-grid" class="grid-3">
-                <!-- Discord user cards will render here -->
+                <!-- Text credits load here -->
             </div>
         </div>
 
@@ -315,39 +379,105 @@
             <p>Explore our featured partner communities and Discord servers.</p>
 
             <div id="partners-grid" class="grid-3">
-                <!-- Discord server cards will render here -->
+                <!-- Text partners load here -->
+            </div>
+        </div>
+
+        <!-- ADMIN PAGE -->
+        <div id="page-admin" class="page-content">
+            <h1>Admin Panel</h1>
+            
+            <div id="admin-auth" class="admin-lock-screen">
+                <h2>Enter Security PIN</h2>
+                <p style="font-size: 14px;">Enter your PIN or Master Override Code to access settings.</p>
+                <div class="input-group" style="max-width: 280px; margin: 20px auto;">
+                    <input type="password" id="admin-pin-input" placeholder="Enter PIN">
+                </div>
+                <button onclick="unlockAdmin()" class="btn">Unlock Admin Panel</button>
+                <p id="admin-auth-error" style="color: #ff6b6b; font-size: 14px; margin-top: 10px;"></p>
+            </div>
+
+            <div id="admin-dashboard" style="display: none;">
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3>🛠️ Maintenance Mode Control</h3>
+                    <p style="font-size: 14px;">Toggling maintenance mode will immediately restrict visitor access across all open tabs.</p>
+                    <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;">
+                        <button id="maint-toggle-btn" onclick="toggleMaintenanceMode()" class="btn btn-danger">Enable Maintenance</button>
+                        <span id="maint-status-indicator" style="font-weight: 600;">Status: System Online</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⚙️ Maintenance Message Customizer</h3>
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label>Maintenance Title</label>
+                        <input type="text" id="maint-title-input" value="Under Maintenance">
+                    </div>
+                    <div class="input-group">
+                        <label>Maintenance Message</label>
+                        <textarea id="maint-msg-input" rows="3">We are currently performing scheduled maintenance and updates. Please check back shortly!</textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Estimated Uptime Text</label>
+                        <input type="text" id="maint-eta-input" value="Back online soon">
+                    </div>
+                    <button onclick="saveMaintenanceSettings()" class="btn">Save Maintenance Message</button>
+                    <span id="maint-save-status" style="margin-left: 10px; font-size: 14px;"></span>
+                </div>
             </div>
         </div>
 
     </div>
 
     <script>
-        // DISCORD USER CREDITS CONFIGURATION:
-        // Provide user ID and role. Optional overrides (displayName, username, avatar) can be set.
+        // CONFIGURATION DATA
         const creditsData = [
             { 
                 id: "1373226032936783942", 
-                role: "Project Owner",
-                displayName: "Chris",
-                username: "@chrisy101112"
+                role: "Project Owner", 
+                displayName: "Chris", 
+                username: "@chrisy101112" 
             },
             { 
                 id: "1422589540966858962", 
-                role: "Developer",
-                displayName: "RZ",
-                username: "@rz_riccardo"
+                role: "Developer", 
+                displayName: "RZ", 
+                username: "@rz_riccardo" 
             }
         ];
 
-        // DISCORD PARTNERS CONFIGURATION:
-        // Specify inviteCode, guildId (Server ID), or both for reliable fetching!
         const partnersData = [
-            { inviteCode: "discord-api", inviteLink: "https://discord.gg/discord-api", role: "Official API Hub" },
-            { inviteCode: "discord-developers", inviteLink: "https://discord.gg/discord-developers", role: "Dev Community" }
+            { name: "Discord Developer Community", role: "Official API Hub", inviteLink: "https://discord.gg/discord-api" },
+            { name: "Scripting & Bot Developers", role: "Dev Community", inviteLink: "https://discord.gg/discord-developers" }
         ];
 
-        // Page Navigation Switcher
+        // System Variables
+        const DEFAULT_PIN = "1234";
+        const MASTER_OVERRIDE = "OVERRIDE9999";
+        let isAdminUnlocked = false;
+        let secretClickCount = 0;
+        let secretClickTimer = null;
+
+        // Secret Admin Trigger on Maintenance Overlay (Triple-click the wrench icon 🛠️)
+        function secretAdminTrigger() {
+            secretClickCount++;
+            clearTimeout(secretClickTimer);
+            if (secretClickCount >= 3) {
+                secretClickCount = 0;
+                openAdminBypass();
+            } else {
+                secretClickTimer = setTimeout(() => {
+                    secretClickCount = 0;
+                }, 1000);
+            }
+        }
+
+        // Navigation Switcher & Persistence
         function showPage(pageId) {
+            // Save state to localStorage and hash
+            localStorage.setItem('activeTab', pageId);
+            window.location.hash = pageId;
+
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
             
@@ -360,6 +490,111 @@
             }
         }
 
+        // Maintenance State Check
+        function checkMaintenanceState() {
+            const isMaint = localStorage.getItem('maintenanceActive') === 'true';
+            const overlay = document.getElementById('maintenance-overlay');
+            const statusInd = document.getElementById('maint-status-indicator');
+            const toggleBtn = document.getElementById('maint-toggle-btn');
+
+            // Load Custom Messages
+            const title = localStorage.getItem('maintTitle') || "Under Maintenance";
+            const msg = localStorage.getItem('maintMsg') || "We are currently performing scheduled maintenance and updates. Please check back shortly!";
+            const eta = localStorage.getItem('maintEta') || "Back online soon";
+
+            document.getElementById('maint-title-display').innerText = title;
+            document.getElementById('maint-msg-display').innerText = msg;
+            document.getElementById('maint-eta-display').innerText = "Estimated Uptime: " + eta;
+
+            // Sync inputs if admin open
+            document.getElementById('maint-title-input').value = title;
+            document.getElementById('maint-msg-input').value = msg;
+            document.getElementById('maint-eta-input').value = eta;
+
+            if (isMaint) {
+                overlay.style.display = 'flex';
+                if (statusInd) {
+                    statusInd.innerText = "Status: Maintenance Active";
+                    statusInd.style.color = "#f23f43";
+                }
+                if (toggleBtn) {
+                    toggleBtn.innerText = "Disable Maintenance Mode";
+                    toggleBtn.className = "btn";
+                }
+            } else {
+                overlay.style.display = 'none';
+                if (statusInd) {
+                    statusInd.innerText = "Status: System Online";
+                    statusInd.style.color = "#4ade80";
+                }
+                if (toggleBtn) {
+                    toggleBtn.innerText = "Enable Maintenance Mode";
+                    toggleBtn.className = "btn btn-danger";
+                }
+            }
+        }
+
+        function toggleMaintenanceMode() {
+            const current = localStorage.getItem('maintenanceActive') === 'true';
+            const newState = (!current).toString();
+            localStorage.setItem('maintenanceActive', newState);
+            
+            // Dispatch custom storage event for same-tab instant reaction
+            window.dispatchEvent(new Event('maintenanceUpdate'));
+            checkMaintenanceState();
+        }
+
+        function saveMaintenanceSettings() {
+            const title = document.getElementById('maint-title-input').value;
+            const msg = document.getElementById('maint-msg-input').value;
+            const eta = document.getElementById('maint-eta-input').value;
+
+            localStorage.setItem('maintTitle', title);
+            localStorage.setItem('maintMsg', msg);
+            localStorage.setItem('maintEta', eta);
+
+            // Dispatch custom storage event for instant reaction
+            window.dispatchEvent(new Event('maintenanceUpdate'));
+
+            const status = document.getElementById('maint-save-status');
+            status.style.color = '#4ade80';
+            status.innerText = 'Maintenance settings saved!';
+            setTimeout(() => { status.innerText = ''; }, 3000);
+            checkMaintenanceState();
+        }
+
+        function openAdminBypass() {
+            showPage('admin');
+            document.getElementById('maintenance-overlay').style.display = 'none';
+        }
+
+        // Listen for storage changes across all tabs/windows instantly
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'maintenanceActive' || e.key === 'maintTitle' || e.key === 'maintMsg' || e.key === 'maintEta') {
+                checkMaintenanceState();
+            }
+        });
+
+        // Listen for local tab updates
+        window.addEventListener('maintenanceUpdate', () => {
+            checkMaintenanceState();
+        });
+
+        // Admin Security Unlock
+        function unlockAdmin() {
+            const inputPin = document.getElementById('admin-pin-input').value;
+            const currentPin = localStorage.getItem('adminPin') || DEFAULT_PIN;
+
+            if (inputPin === currentPin || inputPin === MASTER_OVERRIDE) {
+                isAdminUnlocked = true;
+                document.getElementById('admin-auth').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'block';
+                document.getElementById('admin-auth-error').innerText = '';
+            } else {
+                document.getElementById('admin-auth-error').innerText = 'Incorrect PIN code or Override key.';
+            }
+        }
+
         // Live Clock Script
         function tick() {
             var clockEl = document.getElementById("clock");
@@ -368,206 +603,51 @@
         setInterval(tick, 1000);
         tick();
 
-        // Helper to generate standard default Discord avatars based on User ID
-        function getDefaultAvatar(userId) {
-            try {
-                const index = BigInt(userId) >> 22n;
-                return `https://cdn.discordapp.com/embed/avatars/${Number(index % 5n)}.png`;
-            } catch (e) {
-                return `https://cdn.discordapp.com/embed/avatars/0.png`;
-            }
-        }
-
-        // Safe fetch with timeout
-        async function fetchWithTimeout(resource, options = {}, timeout = 3500) {
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeout);
-            try {
-                const response = await fetch(resource, {
-                    ...options,
-                    signal: controller.signal
-                });
-                clearTimeout(id);
-                return response;
-            } catch (error) {
-                clearTimeout(id);
-                throw error;
-            }
-        }
-
-        // Fetch Discord User Data using CORS proxy + API fallback
-        async function fetchDiscordUser(credit) {
-            const userId = credit.id;
-            const fallbackPfp = credit.avatar || getDefaultAvatar(userId);
-            
-            let result = {
-                id: userId,
-                displayName: credit.displayName || `User (${userId.slice(-4)})`,
-                username: credit.username || `@user_${userId.slice(-4)}`,
-                pfp: fallbackPfp,
-                status: "offline"
-            };
-
-            // Strategy 1: Try Lanyard API (Best for active users / presence)
-            try {
-                const res = await fetchWithTimeout(`https://api.lanyard.rest/v1/users/${userId}`);
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json && json.success && json.data) {
-                        const user = json.data.discord_user;
-                        const avatarUrl = user.avatar 
-                            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith('a_') ? 'gif' : 'png'}?size=128`
-                            : fallbackPfp;
-                        
-                        return {
-                            id: user.id,
-                            displayName: credit.displayName || user.global_name || user.username,
-                            username: credit.username || `@${user.username}`,
-                            pfp: avatarUrl,
-                            status: json.data.discord_status || 'offline'
-                        };
-                    }
-                }
-            } catch (e) {
-                // Ignore failure, proceed to proxy lookup
-            }
-
-            // Strategy 2: Fetch profile details via CORS proxy from Discord lookup endpoint
-            try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://discordlookup.mesal3.workers.dev/v1/user/${userId}`)}`;
-                const res = await fetchWithTimeout(proxyUrl);
-                if (res.ok) {
-                    const proxyData = await res.json();
-                    if (proxyData && proxyData.contents) {
-                        const data = JSON.parse(proxyData.contents);
-                        if (data && (data.global_name || data.username)) {
-                            const avatarUrl = data.avatar 
-                                ? `https://cdn.discordapp.com/avatars/${userId}/${data.avatar}.png?size=128`
-                                : fallbackPfp;
-
-                            return {
-                                id: userId,
-                                displayName: credit.displayName || data.global_name || data.username,
-                                username: credit.username || `@${data.username}`,
-                                pfp: avatarUrl,
-                                status: 'offline'
-                            };
-                        }
-                    }
-                }
-            } catch (e) {
-                // Ignore and return standard default object
-            }
-
-            return result;
-        }
-
-        // Fetch Discord Server Data with proxy fallback
-        async function fetchDiscordServer(partner) {
-            const defaultServer = {
-                name: partner.role || "Discord Server",
-                icon: "https://cdn.discordapp.com/embed/avatars/0.png",
-                onlineMembers: 0,
-                totalMembers: 0,
-                inviteLink: partner.inviteLink || "#",
-                role: partner.role || "Partner Community"
-            };
-
-            const code = partner.inviteCode || (partner.inviteLink ? partner.inviteLink.split('/').pop() : "");
-
-            // Strategy 1: Public invite lookup with CORS proxy
-            if (code) {
-                try {
-                    const targetUrl = `https://discord.com/api/v9/invites/${code}?with_counts=true`;
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-                    
-                    const res = await fetchWithTimeout(proxyUrl);
-                    if (res.ok) {
-                        const proxyData = await res.json();
-                        if (proxyData && proxyData.contents) {
-                            const data = JSON.parse(proxyData.contents);
-                            if (data && data.guild) {
-                                const guild = data.guild;
-                                const iconUrl = guild.icon
-                                    ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
-                                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
-
-                                return {
-                                    name: guild.name || "Discord Server",
-                                    icon: iconUrl,
-                                    onlineMembers: data.approximate_presence_count || 0,
-                                    totalMembers: data.approximate_member_count || 0,
-                                    inviteLink: partner.inviteLink || `https://discord.gg/${code}`,
-                                    role: partner.role || "Partner Community"
-                                };
-                            }
-                        }
-                    }
-                } catch (e) {
-                    // Fallthrough
-                }
-            }
-
-            return defaultServer;
-        }
-
-        // Render Credits Page Cards
-        async function loadCredits() {
+        // Load Text-Only Credits
+        function loadCredits() {
             const grid = document.getElementById('credits-grid');
             if (!grid) return;
-            grid.innerHTML = '<p style="font-size:14px; opacity:0.8;">Loading credits...</p>';
-
-            let htmlBuffer = '';
-            for (const credit of creditsData) {
-                const userData = await fetchDiscordUser(credit);
-
-                htmlBuffer += `
+            let html = '';
+            creditsData.forEach(c => {
+                html += `
                     <div class="discord-card">
-                        <div class="discord-info">
-                            <span class="discord-displayname">${userData.displayName}</span>
-                            <span class="discord-username">${userData.username}</span>
-                            <span class="discord-role">${credit.role}</span>
-                        </div>
+                        <span class="discord-displayname">${c.displayName}</span>
+                        <span class="discord-username">${c.username}</span>
+                        <span class="discord-role">${c.role}</span>
                     </div>
                 `;
-            }
-            grid.innerHTML = htmlBuffer;
+            });
+            grid.innerHTML = html;
         }
 
-        // Render Partners Page Cards
-        async function loadPartners() {
+        // Load Text-Only Partners
+        function loadPartners() {
             const grid = document.getElementById('partners-grid');
             if (!grid) return;
-            grid.innerHTML = '<p style="font-size:14px; opacity:0.8;">Loading partners...</p>';
-
-            let htmlBuffer = '';
-            for (const partner of partnersData) {
-                const serverData = await fetchDiscordServer(partner);
-
-                htmlBuffer += `
+            let html = '';
+            partnersData.forEach(p => {
+                html += `
                     <div class="discord-card partner-card">
-                        <div class="partner-header">
-                            <div class="discord-info">
-                                <span class="discord-displayname">${serverData.name}</span>
-                                <span class="discord-role">${serverData.role}</span>
-                            </div>
-                        </div>
-                        <div class="partner-meta">
-                            <span class="online-count"><div class="online-dot"></div> ${serverData.onlineMembers.toLocaleString()} Online</span>
-                            <span>•</span>
-                            <span>${serverData.totalMembers.toLocaleString()} Members</span>
-                        </div>
-                        <a href="${serverData.inviteLink}" target="_blank" rel="noopener noreferrer" class="join-btn">Join Server</a>
+                        <span class="discord-displayname">${p.name}</span>
+                        <span class="discord-role" style="margin-bottom: 10px;">${p.role}</span>
+                        <a href="${p.inviteLink}" target="_blank" rel="noopener noreferrer" class="join-btn">Join Server</a>
                     </div>
                 `;
-            }
-            grid.innerHTML = htmlBuffer;
+            });
+            grid.innerHTML = html;
         }
 
-        // Initialize content on page load
+        // Page Restore & Init
         window.addEventListener('DOMContentLoaded', () => {
             loadCredits();
             loadPartners();
+            checkMaintenanceState();
+
+            // Restore active page tab on refresh
+            const hash = window.location.hash.replace('#', '');
+            const savedTab = localStorage.getItem('activeTab');
+            const pageToLoad = hash || savedTab || 'home';
+            showPage(pageToLoad);
         });
     </script>
 </body>
