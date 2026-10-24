@@ -316,7 +316,7 @@
     <header>
         <div class="logo-container">
             <div class="logo">GRADIENT</div>
-            <span class="version-badge">v1.2.0</span>
+            <span class="version-badge">v0.0.1</span>
         </div>
         <nav>
             <a href="#home" onclick="showPage('home')" id="nav-home" class="active">Home</a>
@@ -389,40 +389,19 @@
             
             <div id="admin-auth" class="admin-lock-screen">
                 <h2>Enter Security PIN</h2>
-                <p style="font-size: 14px;">Enter your PIN or Master Override Code to access settings.</p>
                 <div class="input-group" style="max-width: 280px; margin: 20px auto;">
-                    <input type="password" id="admin-pin-input" placeholder="Enter PIN">
+                    <input type="password" id="admin-pin-input">
                 </div>
                 <button onclick="unlockAdmin()" class="btn">Unlock Admin Panel</button>
                 <p id="admin-auth-error" style="color: #ff6b6b; font-size: 14px; margin-top: 10px;"></p>
             </div>
 
             <div id="admin-dashboard" style="display: none;">
-                <div class="card" style="margin-bottom: 20px;">
-                    <h3>🛠️ Maintenance Mode Control</h3>
-                    <p style="font-size: 14px;">Toggling maintenance mode will immediately restrict visitor access across all open tabs.</p>
-                    <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;">
-                        <button id="maint-toggle-btn" onclick="toggleMaintenanceMode()" class="btn btn-danger">Enable Maintenance</button>
-                        <span id="maint-status-indicator" style="font-weight: 600;">Status: System Online</span>
-                    </div>
-                </div>
-
                 <div class="card">
-                    <h3>⚙️ Maintenance Message Customizer</h3>
-                    <div class="input-group" style="margin-top: 15px;">
-                        <label>Maintenance Title</label>
-                        <input type="text" id="maint-title-input" value="Under Maintenance">
-                    </div>
-                    <div class="input-group">
-                        <label>Maintenance Message</label>
-                        <textarea id="maint-msg-input" rows="3">We are currently performing scheduled maintenance and updates. Please check back shortly!</textarea>
-                    </div>
-                    <div class="input-group">
-                        <label>Estimated Uptime Text</label>
-                        <input type="text" id="maint-eta-input" value="Back online soon">
-                    </div>
-                    <button onclick="saveMaintenanceSettings()" class="btn">Save Maintenance Message</button>
-                    <span id="maint-save-status" style="margin-left: 10px; font-size: 14px;"></span>
+                    <h3>⚙️ Maintenance Configuration</h3>
+                    <p style="font-size: 14px; color: rgba(255,255,255,0.8);">
+                        Maintenance mode is currently controlled directly in the source code at the top of the <code>&lt;script&gt;</code> block via the <code>ENABLE_MAINTENANCE</code> constant.
+                    </p>
                 </div>
             </div>
         </div>
@@ -430,6 +409,12 @@
     </div>
 
     <script>
+        // ==========================================
+        // CONFIGURATION (EDIT MAINTENANCE HERE)
+        // Set to true to turn on maintenance for everyone, or false to turn off.
+        // ==========================================
+        const ENABLE_MAINTENANCE = true; 
+
         // CONFIGURATION DATA
         const creditsData = [
             { 
@@ -455,26 +440,9 @@
         const DEFAULT_PIN = "1234";
         const MASTER_OVERRIDE = "OVERRIDE9999";
         let isAdminUnlocked = false;
-        let secretClickCount = 0;
-        let secretClickTimer = null;
-
-        // Secret Admin Trigger on Maintenance Overlay (Triple-click the wrench icon 🛠️)
-        function secretAdminTrigger() {
-            secretClickCount++;
-            clearTimeout(secretClickTimer);
-            if (secretClickCount >= 3) {
-                secretClickCount = 0;
-                openAdminBypass();
-            } else {
-                secretClickTimer = setTimeout(() => {
-                    secretClickCount = 0;
-                }, 1000);
-            }
-        }
 
         // Navigation Switcher & Persistence
         function showPage(pageId) {
-            // Save state to localStorage and hash
             localStorage.setItem('activeTab', pageId);
             window.location.hash = pageId;
 
@@ -492,93 +460,19 @@
 
         // Maintenance State Check
         function checkMaintenanceState() {
-            const isMaint = localStorage.getItem('maintenanceActive') === 'true';
             const overlay = document.getElementById('maintenance-overlay');
-            const statusInd = document.getElementById('maint-status-indicator');
-            const toggleBtn = document.getElementById('maint-toggle-btn');
 
-            // Load Custom Messages
-            const title = localStorage.getItem('maintTitle') || "Under Maintenance";
-            const msg = localStorage.getItem('maintMsg') || "We are currently performing scheduled maintenance and updates. Please check back shortly!";
-            const eta = localStorage.getItem('maintEta') || "Back online soon";
-
-            document.getElementById('maint-title-display').innerText = title;
-            document.getElementById('maint-msg-display').innerText = msg;
-            document.getElementById('maint-eta-display').innerText = "Estimated Uptime: " + eta;
-
-            // Sync inputs if admin open
-            document.getElementById('maint-title-input').value = title;
-            document.getElementById('maint-msg-input').value = msg;
-            document.getElementById('maint-eta-input').value = eta;
-
-            if (isMaint) {
+            if (ENABLE_MAINTENANCE) {
                 overlay.style.display = 'flex';
-                if (statusInd) {
-                    statusInd.innerText = "Status: Maintenance Active";
-                    statusInd.style.color = "#f23f43";
-                }
-                if (toggleBtn) {
-                    toggleBtn.innerText = "Disable Maintenance Mode";
-                    toggleBtn.className = "btn";
-                }
             } else {
                 overlay.style.display = 'none';
-                if (statusInd) {
-                    statusInd.innerText = "Status: System Online";
-                    statusInd.style.color = "#4ade80";
-                }
-                if (toggleBtn) {
-                    toggleBtn.innerText = "Enable Maintenance Mode";
-                    toggleBtn.className = "btn btn-danger";
-                }
             }
-        }
-
-        function toggleMaintenanceMode() {
-            const current = localStorage.getItem('maintenanceActive') === 'true';
-            const newState = (!current).toString();
-            localStorage.setItem('maintenanceActive', newState);
-            
-            // Dispatch custom storage event for same-tab instant reaction
-            window.dispatchEvent(new Event('maintenanceUpdate'));
-            checkMaintenanceState();
-        }
-
-        function saveMaintenanceSettings() {
-            const title = document.getElementById('maint-title-input').value;
-            const msg = document.getElementById('maint-msg-input').value;
-            const eta = document.getElementById('maint-eta-input').value;
-
-            localStorage.setItem('maintTitle', title);
-            localStorage.setItem('maintMsg', msg);
-            localStorage.setItem('maintEta', eta);
-
-            // Dispatch custom storage event for instant reaction
-            window.dispatchEvent(new Event('maintenanceUpdate'));
-
-            const status = document.getElementById('maint-save-status');
-            status.style.color = '#4ade80';
-            status.innerText = 'Maintenance settings saved!';
-            setTimeout(() => { status.innerText = ''; }, 3000);
-            checkMaintenanceState();
         }
 
         function openAdminBypass() {
             showPage('admin');
             document.getElementById('maintenance-overlay').style.display = 'none';
         }
-
-        // Listen for storage changes across all tabs/windows instantly
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'maintenanceActive' || e.key === 'maintTitle' || e.key === 'maintMsg' || e.key === 'maintEta') {
-                checkMaintenanceState();
-            }
-        });
-
-        // Listen for local tab updates
-        window.addEventListener('maintenanceUpdate', () => {
-            checkMaintenanceState();
-        });
 
         // Admin Security Unlock
         function unlockAdmin() {
@@ -592,6 +486,23 @@
                 document.getElementById('admin-auth-error').innerText = '';
             } else {
                 document.getElementById('admin-auth-error').innerText = 'Incorrect PIN code or Override key.';
+            }
+        }
+
+        // Secret Admin Trigger on Maintenance Icon
+        let triggerClicks = 0;
+        let triggerTimer = null;
+        function secretAdminTrigger() {
+            triggerClicks++;
+            if (triggerTimer) clearTimeout(triggerTimer);
+
+            if (triggerClicks >= 3) {
+                openAdminBypass();
+                triggerClicks = 0;
+            } else {
+                triggerTimer = setTimeout(() => {
+                    triggerClicks = 0;
+                }, 1000);
             }
         }
 
