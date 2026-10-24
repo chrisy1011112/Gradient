@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gradient Website - Credits</title>
+    <title>Gradient Website - Home, About, Credits & Partners</title>
+    
     <style>
         /* Base Styling */
         * {
@@ -60,10 +61,10 @@
         nav a {
             color: rgba(255, 255, 255, 0.85);
             text-decoration: none;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
             transition: all 0.3s ease;
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 6px;
         }
 
@@ -150,7 +151,7 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
-        /* Discord Credit Card Styling */
+        /* Discord Credit & Partner Card Styling */
         .discord-card {
             display: flex;
             align-items: center;
@@ -185,6 +186,10 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
+        .server-icon {
+            border-radius: 18px; /* Standard rounded icon style for Discord servers */
+        }
+
         .status-dot {
             position: absolute;
             bottom: 2px;
@@ -205,6 +210,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            flex-grow: 1;
         }
 
         .discord-displayname {
@@ -232,6 +238,61 @@
             align-self: flex-start;
             border: 1px solid rgba(88, 101, 242, 0.5);
         }
+
+        /* Server Partner Cards Extensions */
+        .partner-card {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .partner-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .partner-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 15px;
+        }
+
+        .online-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #23a55a;
+        }
+
+        .join-btn {
+            width: 100%;
+            background: #5865F2;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            padding: 10px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+            display: block;
+            border: none;
+        }
+
+        .join-btn:hover {
+            background: #4752C4;
+        }
     </style>
 </head>
 <body>
@@ -243,6 +304,7 @@
             <a href="#" onclick="showPage('home')" id="nav-home" class="active">Home</a>
             <a href="#" onclick="showPage('about')" id="nav-about">About</a>
             <a href="#" onclick="showPage('credits')" id="nav-credits">Credits</a>
+            <a href="#" onclick="showPage('partners')" id="nav-partners">Partners</a>
         </nav>
     </header>
 
@@ -252,7 +314,7 @@
         <!-- HOME PAGE -->
         <div id="page-home" class="page-content active">
             <h1>Hello</h1>
-            <p>Welcome to our responsive multi-page web application. Enjoy dynamic gradients, live features, and smooth transitions.</p>
+            <p>Welcome to our responsive web application. Enjoy dynamic gradients and smooth navigation transitions.</p>
             <h2 id="clock">--:--:--</h2>
         </div>
 
@@ -278,18 +340,34 @@
             <p>Special thanks to everyone who contributed to making this project possible.</p>
 
             <div id="credits-grid" class="grid-3">
-                <!-- Discord user cards will be rendered here automatically -->
+                <!-- Discord user cards will render here -->
+            </div>
+        </div>
+
+        <!-- PARTNERS PAGE -->
+        <div id="page-partners" class="page-content">
+            <h1>Our Partners</h1>
+            <p>Explore our featured partner communities and Discord servers.</p>
+
+            <div id="partners-grid" class="grid-3">
+                <!-- Discord server cards will render here -->
             </div>
         </div>
 
     </div>
 
     <script>
-        // ADD YOUR DISCORD USER IDs AND ROLES HERE:
+        // DISCORD USER CREDITS CONFIGURATION:
         const creditsData = [
-            { id: "156832021058813952", role: "Project Owner" },
-            { id: "80351110224678912", role: "Developer" },
-            { id: "987654321098765432", role: "Contributor" }
+            { id: "1373226032936783942", role: "Project Owner" },
+            { id: "1422589540966858962", role: "Developer" }
+        ];
+
+        // DISCORD PARTNERS CONFIGURATION:
+        // Provide Invite Code (e.g. "discord-api" or "discord") or Server ID + Invite Link
+        const partnersData = [
+            { inviteCode: "discord-api", inviteLink: "https://discord.gg/discord-api", role: "Official API Hub" },
+            { inviteCode: "discord-developers", inviteLink: "https://discord.gg/discord-developers", role: "Dev Community" }
         ];
 
         // Page Navigation Switcher
@@ -308,71 +386,138 @@
 
         // Live Clock Script
         function tick() {
-            document.getElementById("clock").innerText = new Date().toLocaleTimeString();
+            var clockEl = document.getElementById("clock");
+            if (clockEl) clockEl.innerText = new Date().toLocaleTimeString();
         }
         setInterval(tick, 1000);
         tick();
 
-        // Fetch & Render Discord User Profile Cards
+        // Helper function for safe fetching with timeout
+        async function fetchWithTimeout(resource, options = {}, timeout = 4000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(resource, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+
+        // Fetch Discord User Data safely with robust fallbacks
         async function fetchDiscordUser(userId) {
-            try {
-                const response = await fetch(`https://api.lanyard.rest/v1/users/${userId}`);
-                const data = await response.json();
-
-                if (data.success && data.data) {
-                    const user = data.data.discord_user;
-                    const avatarUrl = user.avatar 
-                        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-                        : `https://cdn.discordapp.com/embed/avatars/${(user.discriminator || 0) % 5}.png`;
-                    
-                    return {
-                        id: user.id,
-                        displayName: user.global_name || user.username,
-                        username: `@${user.username}`,
-                        pfp: avatarUrl,
-                        status: data.data.discord_status || 'offline'
-                    };
-                }
-            } catch (e) {
-                console.warn(`Lanyard API offline or rate-limited for ID ${userId}, trying fallback...`);
-            }
-
-            // Fallback API if Lanyard returns no active websocket session for the user
-            try {
-                const fallbackRes = await fetch(`https://api.japi.rest/discord/v1/user/${userId}`);
-                const fallbackData = await fallbackRes.json();
-                
-                if (fallbackData && fallbackData.data) {
-                    const user = fallbackData.data;
-                    return {
-                        id: user.id,
-                        displayName: user.global_name || user.username,
-                        username: `@${user.username}`,
-                        pfp: user.avatarURL || `https://cdn.discordapp.com/embed/avatars/0.png`,
-                        status: 'offline'
-                    };
-                }
-            } catch (e) {
-                console.error(`Error fetching user ${userId}:`, e);
-            }
-
-            return {
+            const defaultUser = {
                 id: userId,
                 displayName: "Discord User",
-                username: `@${userId}`,
+                username: `@user_${userId.slice(-4)}`,
                 pfp: "https://cdn.discordapp.com/embed/avatars/0.png",
                 status: "offline"
             };
+
+            // Attempt 1: Lanyard API
+            try {
+                const response = await fetchWithTimeout(`https://api.lanyard.rest/v1/users/${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.success && data.data) {
+                        const user = data.data.discord_user;
+                        const avatarUrl = user.avatar 
+                            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+                            : `https://cdn.discordapp.com/embed/avatars/0.png`;
+                        
+                        return {
+                            id: user.id,
+                            displayName: user.global_name || user.username,
+                            username: `@${user.username}`,
+                            pfp: avatarUrl,
+                            status: data.data.discord_status || 'offline'
+                        };
+                    }
+                }
+            } catch (e) {
+                // Ignore silent fetch error and try fallback
+            }
+
+            // Attempt 2: Public JAPI Lookup
+            try {
+                const fallbackRes = await fetchWithTimeout(`https://api.japi.rest/discord/v1/user/${userId}`);
+                if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData && fallbackData.data) {
+                        const user = fallbackData.data;
+                        return {
+                            id: user.id || userId,
+                            displayName: user.global_name || user.username || "Discord User",
+                            username: user.username ? `@${user.username}` : `@${userId}`,
+                            pfp: user.avatarURL || `https://cdn.discordapp.com/embed/avatars/0.png`,
+                            status: 'offline'
+                        };
+                    }
+                }
+            } catch (e) {
+                // Ignore fallback fetch failure
+            }
+
+            // Fallback default
+            return defaultUser;
         }
 
+        // Fetch Discord Server/Guild Invite Data safely
+        async function fetchDiscordServer(partner) {
+            const defaultServer = {
+                name: partner.role || "Discord Server",
+                icon: "https://cdn.discordapp.com/embed/avatars/0.png",
+                onlineMembers: 0,
+                totalMembers: 0,
+                inviteLink: partner.inviteLink || "#",
+                role: partner.role || "Partner"
+            };
+
+            try {
+                const code = partner.inviteCode || (partner.inviteLink ? partner.inviteLink.split('/').pop() : "");
+                if (!code) return defaultServer;
+
+                const response = await fetchWithTimeout(`https://discord.com/api/v9/invites/${code}?with_counts=true`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const guild = data.guild;
+                    const iconUrl = guild && guild.icon
+                        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
+                        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+                    return {
+                        name: guild ? guild.name : "Discord Server",
+                        icon: iconUrl,
+                        onlineMembers: data.approximate_presence_count || 0,
+                        totalMembers: data.approximate_member_count || 0,
+                        inviteLink: partner.inviteLink || `https://discord.gg/${code}`,
+                        role: partner.role || "Partner Community"
+                    };
+                }
+            } catch (e) {
+                // Ignore silent server invite fetch error
+            }
+
+            return defaultServer;
+        }
+
+        // Render Credits Page Cards
         async function loadCredits() {
             const grid = document.getElementById('credits-grid');
-            grid.innerHTML = '';
+            if (!grid) return;
+            grid.innerHTML = '<p style="font-size:14px; opacity:0.8;">Loading credits...</p>';
 
+            let htmlBuffer = '';
             for (const credit of creditsData) {
                 const userData = await fetchDiscordUser(credit.id);
 
-                const cardHtml = `
+                htmlBuffer += `
                     <div class="discord-card">
                         <div class="pfp-wrapper">
                             <img class="discord-pfp" src="${userData.pfp}" alt="${userData.displayName}'s PFP" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
@@ -385,12 +530,48 @@
                         </div>
                     </div>
                 `;
-                grid.innerHTML += cardHtml;
             }
+            grid.innerHTML = htmlBuffer;
         }
 
-        // Initialize credits on page load
-        loadCredits();
+        // Render Partners Page Cards
+        async function loadPartners() {
+            const grid = document.getElementById('partners-grid');
+            if (!grid) return;
+            grid.innerHTML = '<p style="font-size:14px; opacity:0.8;">Loading partners...</p>';
+
+            let htmlBuffer = '';
+            for (const partner of partnersData) {
+                const serverData = await fetchDiscordServer(partner);
+
+                htmlBuffer += `
+                    <div class="discord-card partner-card">
+                        <div class="partner-header">
+                            <div class="pfp-wrapper">
+                                <img class="discord-pfp server-icon" src="${serverData.icon}" alt="${serverData.name}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            </div>
+                            <div class="discord-info">
+                                <span class="discord-displayname">${serverData.name}</span>
+                                <span class="discord-role">${serverData.role}</span>
+                            </div>
+                        </div>
+                        <div class="partner-meta">
+                            <span class="online-count"><div class="online-dot"></div> ${serverData.onlineMembers.toLocaleString()} Online</span>
+                            <span>•</span>
+                            <span>${serverData.totalMembers.toLocaleString()} Members</span>
+                        </div>
+                        <a href="${serverData.inviteLink}" target="_blank" rel="noopener noreferrer" class="join-btn">Join Server</a>
+                    </div>
+                `;
+            }
+            grid.innerHTML = htmlBuffer;
+        }
+
+        // Initialize content on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCredits();
+            loadPartners();
+        });
     </script>
 </body>
 </html>
